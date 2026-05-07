@@ -84,7 +84,7 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 }
 .part-cap    { height: 28px; }
 .part-cube   { height: 280px; }
-.part-mid    { height: 84px; }
+.part-mid    { height: 130px; }
 .part-bottom { height: 130px; }
 
 /* 正面ビューでは前面以外は隠す */
@@ -218,20 +218,24 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 }
 .mini-capsule {
   position: absolute;
-  width: 36px; height: 36px;
+  width: 54px; height: 54px;
   border-radius: 50%;
   background:
     radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 28%, transparent 52%),
     linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) 50%, var(--cap-color, #ff8aab) 50%, var(--cap-color-dark, #d8516f) 100%);
   box-shadow:
-    inset -3px -3px 6px rgba(0,0,0,0.18),
-    inset 0 1px 2px rgba(255,255,255,0.7),
-    1px 2px 3px rgba(0,0,0,0.18);
+    inset -4px -4px 8px rgba(0,0,0,0.18),
+    inset 0 2px 3px rgba(255,255,255,0.7),
+    1px 3px 5px rgba(0,0,0,0.2);
   /* JS が --x, --y, --rot を設定する */
   left: var(--x);
   top:  var(--y);
   transform: rotate(var(--rot, 0deg));
-  transition: top 0.42s cubic-bezier(0.4, 0.1, 0.3, 1.05), left 0.42s cubic-bezier(0.4, 0.1, 0.3, 1.05);
+  /* リアルなかきまぜ：上下方向は重力に従ってゆっくり、横は素早く */
+  transition:
+    top  0.55s cubic-bezier(0.34, 0.05, 0.32, 1.0),
+    left 0.4s  cubic-bezier(0.4, 0.1, 0.4, 1),
+    transform 0.4s cubic-bezier(0.3, 0.1, 0.4, 1);
 }
 .mini-capsule::after {
   content: ""; position: absolute; left: 2px; right: 2px; top: 50%;
@@ -240,14 +244,14 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   border-radius: 2px;
 }
 .mini-capsule.shaking {
-  animation: capsuleShake 0.45s ease-in-out;
+  animation: capsuleBounce 0.5s cubic-bezier(0.3, 0.6, 0.4, 1.4);
 }
-@keyframes capsuleShake {
-  0%, 100% { transform: rotate(var(--rot, 0deg)) translate(0, 0); }
-  20%      { transform: rotate(calc(var(--rot, 0deg) - 9deg)) translate(-2px, -2px); }
-  40%      { transform: rotate(calc(var(--rot, 0deg) + 8deg)) translate(2px, -1px); }
-  60%      { transform: rotate(calc(var(--rot, 0deg) - 6deg)) translate(-2px, 1px); }
-  80%      { transform: rotate(calc(var(--rot, 0deg) + 3deg)) translate(1px, 2px); }
+/* 衝撃で一瞬上に飛んで、重力で落ちて落ち着く動き */
+@keyframes capsuleBounce {
+  0%   { transform: rotate(var(--rot, 0deg)) translate(0, 0); }
+  25%  { transform: rotate(calc(var(--rot, 0deg) + var(--bx, 6deg))) translate(var(--bxd, 2px), var(--byu, -8px)); }
+  55%  { transform: rotate(calc(var(--rot, 0deg) - var(--bx, 4deg))) translate(calc(var(--bxd, 2px) * -0.4), 2px); }
+  100% { transform: rotate(var(--rot, 0deg)) translate(0, 0); }
 }
 
 /* === 中段 === */
@@ -271,50 +275,36 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   font-size: 11px;
   font-weight: 900;
   color: #fff;
-  letter-spacing: 3px;
+  letter-spacing: 2.5px;
   text-shadow: 0 1px 0 rgba(0,0,0,0.4);
   white-space: nowrap;
 }
-.coin-slot {
-  position: absolute;
-  top: 32px; left: 22px;
-  width: 44px; height: 8px;
-  background: #1a0808;
-  border-radius: 1px;
-  box-shadow:
-    inset 0 2px 3px rgba(0,0,0,0.7),
-    0 1px 0 rgba(255,255,255,0.3);
-}
-.coin-slot::before {
-  content: "";
-  position: absolute;
-  top: -8px; left: -6px; right: -6px; bottom: -8px;
-  border: 2px solid rgba(255,255,255,0.22);
-  border-radius: 4px;
-}
+.coin-slot { display: none; }
+/* 1.5倍のつまみを中央に配置 */
 .knob-housing {
   position: absolute;
-  top: 18px; right: 22px;
-  width: 58px; height: 58px;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -46%);
+  width: 87px; height: 87px;
   border-radius: 50%;
   background:
     radial-gradient(circle at 35% 30%, #fafafa 0%, #b8b8b8 50%, #666 100%);
   box-shadow:
-    inset 0 -4px 8px rgba(0,0,0,0.45),
-    inset 0 3px 4px rgba(255,255,255,0.7),
-    2px 3px 5px rgba(0,0,0,0.4);
+    inset 0 -6px 12px rgba(0,0,0,0.45),
+    inset 0 4px 6px rgba(255,255,255,0.75),
+    3px 5px 8px rgba(0,0,0,0.45);
   display: flex; align-items: center; justify-content: center;
 }
 .knob-housing::before {
   content: "";
   position: absolute;
-  inset: 4px;
+  inset: 6px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #f8f8f8, #999);
-  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(255,255,255,0.6);
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.3), inset 0 3px 5px rgba(255,255,255,0.6);
 }
 .knob {
-  width: 44px; height: 44px;
+  width: 66px; height: 66px;
   position: relative;
   transform-origin: 50% 50%;
   transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.4);
@@ -325,28 +315,24 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   position: absolute;
   top: 50%; left: 50%;
   background: linear-gradient(180deg, #fafafa 0%, #888 100%);
-  border-radius: 2px;
+  border-radius: 3px;
   box-shadow:
     inset 0 1px 1px rgba(255,255,255,0.8),
     inset 0 -1px 1px rgba(0,0,0,0.3),
-    0 1px 2px rgba(0,0,0,0.5);
+    0 2px 3px rgba(0,0,0,0.5);
 }
 .knob-bar.h {
-  width: 44px; height: 10px;
-  transform: translate(-50%, -50%);
-}
-.knob-bar.v {
-  width: 10px; height: 44px;
+  width: 66px; height: 15px;
   transform: translate(-50%, -50%);
 }
 .knob-center {
   position: absolute;
   top: 50%; left: 50%;
-  width: 12px; height: 12px;
+  width: 18px; height: 18px;
   border-radius: 50%;
   background: radial-gradient(circle at 35% 30%, #fff, #888);
   transform: translate(-50%, -50%);
-  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4);
+  box-shadow: inset 0 -2px 3px rgba(0,0,0,0.4);
 }
 
 /* === 下段 === */

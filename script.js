@@ -217,12 +217,11 @@ function bindGacha() {
 
 const NUM_CAPSULES = 50;
 function randomCapsulePosition() {
-  // ガラスキューブいっぱいに散らばせる（カプセル幅36px≒13%）
-  // x: 2〜85%
-  const x = 2 + Math.random() * 83;
-  // y: ほぼ全体に分布。やや下寄り（下に重力で溜まる雰囲気）
-  const yBase = Math.pow(Math.random(), 0.85);
-  const y = 2 + yBase * 88;
+  // カプセル54pxはキューブ280pxの約19%。x: 0〜80%
+  const x = Math.random() * 80;
+  // 重力で下に溜まるような分布（pow で下寄せ）
+  const yBase = Math.pow(Math.random(), 0.6);
+  const y = yBase * 80;
   const rot = Math.floor(Math.random() * 360);
   return { x, y, rot };
 }
@@ -245,25 +244,47 @@ function renderDomeCapsules() {
   }
 }
 
-// 既存カプセルの位置をすこしランダムに動かす（かき混ぜる演出）
+// 既存カプセルを「リアルにかき混ぜる」：
+//   - 上のカプセルほど大きく動く（衝撃が強く伝わる）
+//   - 下のカプセルは詰まっていてあまり動かない
+//   - 全体的に重力で下に流れる傾向
+//   - 各カプセルにランダムな衝撃ベクトル（CSS変数）を渡して bounce アニメーション
 function shuffleCapsulesABit() {
   document.querySelectorAll(".mini-capsule").forEach((el) => {
     const cur = {
-      x: parseFloat(el.style.getPropertyValue("--x")) || 50,
-      y: parseFloat(el.style.getPropertyValue("--y")) || 50,
+      x: parseFloat(el.style.getPropertyValue("--x")) || 40,
+      y: parseFloat(el.style.getPropertyValue("--y")) || 40,
       rot: parseFloat(el.style.getPropertyValue("--rot")) || 0,
     };
-    // 半数は近距離移動、残りは大きめに動かす
-    const heavy = Math.random() < 0.5;
-    const range = heavy ? 28 : 8;
-    let nx = cur.x + (Math.random() - 0.5) * range;
-    let ny = cur.y + (Math.random() - 0.5) * range;
-    nx = Math.max(2, Math.min(85, nx));
-    ny = Math.max(2, Math.min(90, ny));
-    const nrot = cur.rot + (Math.random() - 0.5) * 120;
+    // 上のほうほど可動域大（impactScale が 1〜0.25）
+    const impactScale = 0.25 + Math.max(0, 1 - cur.y / 80) * 0.85;
+    // 横揺れ：±3〜10% 範囲（impactScaleに応じる）
+    const dx = (Math.random() - 0.5) * 12 * impactScale;
+    // 縦揺れ：上に瞬間ジャンプ気味＋重力バイアスで下へ
+    //   下半分は小さく、上半分はやや上に動いた後に落ちる
+    let dy;
+    if (cur.y > 65) {
+      dy = (Math.random() - 0.6) * 4 * impactScale; // ほぼ動かない、わずかに沈む
+    } else {
+      // 軽く跳ねた後、重力で結局少し下に着地する傾向
+      dy = (Math.random() * 6 - 1) * impactScale;  // -1〜+5
+    }
+    let nx = cur.x + dx;
+    let ny = cur.y + dy;
+    nx = Math.max(0, Math.min(80, nx));
+    ny = Math.max(0, Math.min(85, ny));
+    const drot = (Math.random() - 0.5) * 50 * impactScale;
+    const nrot = cur.rot + drot;
     el.style.setProperty("--x", nx.toFixed(1) + "%");
     el.style.setProperty("--y", ny.toFixed(1) + "%");
     el.style.setProperty("--rot", nrot.toFixed(0) + "deg");
+    // ジャンプ・回転のCSS変数（衝撃感）
+    const jumpUp = -(4 + Math.random() * 10) * impactScale;
+    const sideKick = (Math.random() - 0.5) * 8 * impactScale;
+    const tilt = (Math.random() - 0.5) * 14 * impactScale;
+    el.style.setProperty("--byu", jumpUp.toFixed(1) + "px");
+    el.style.setProperty("--bxd", sideKick.toFixed(1) + "px");
+    el.style.setProperty("--bx",  tilt.toFixed(1) + "deg");
   });
 }
 
