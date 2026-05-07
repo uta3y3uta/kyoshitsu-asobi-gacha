@@ -422,38 +422,18 @@ function celebrate() {
     stage.classList.add("celebrate");
   }
 
-  // 紙吹雪：左右に分けて発射 + 全画面でも降らせる
-  const confettiColors = [
-    "#ff5050", "#ff8a3a", "#ffd640", "#a8e063", "#5dd6c2",
-    "#5dbef7", "#9d8df1", "#d792f0", "#ff8aab", "#ffe27a",
-  ];
-  const shapes = ["shape-strip", "shape-circle", "shape-ribbon"];
-  const N_CONFETTI = 110;
-  for (let i = 0; i < N_CONFETTI; i++) {
-    const c = document.createElement("div");
-    const shape = shapes[Math.floor(Math.random() * shapes.length)];
-    c.className = "confetti " + shape;
-    const left = Math.random() * 100;
-    const drift = (Math.random() - 0.5) * 360;
-    const spin = (Math.random() - 0.5) * 1600;
-    const dur = 2.4 + Math.random() * 2.0;
-    const delay = Math.random() * 0.55;
-    const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
-    const sizeW = 6 + Math.random() * 10;
-    const sizeH = 10 + Math.random() * 14;
-    c.style.left = left + "vw";
-    c.style.background = color;
-    c.style.width = sizeW.toFixed(0) + "px";
-    c.style.height = sizeH.toFixed(0) + "px";
-    c.style.setProperty("--drift", drift.toFixed(0) + "px");
-    c.style.setProperty("--spin", spin.toFixed(0) + "deg");
-    c.style.setProperty("--dur", dur.toFixed(2) + "s");
-    c.style.setProperty("--delay", delay.toFixed(2) + "s");
-    layer.appendChild(c);
-  }
+  // 後光（四方八方に広がる光線・2層で回転方向を変えて立体感）
+  // body 直下に配置（celebrate-layer の中だと一部ブラウザで描画されない問題回避）
+  const ray1 = document.createElement("div");
+  ray1.className = "lightrays celebrate-rays";
+  const ray2 = document.createElement("div");
+  ray2.className = "lightrays celebrate-rays layer-2";
+  document.body.appendChild(ray1);
+  document.body.appendChild(ray2);
+  setTimeout(() => { ray1.remove(); ray2.remove(); }, 3000);
 
   // キラキラ
-  const N_SPARKLE = 32;
+  const N_SPARKLE = 36;
   for (let i = 0; i < N_SPARKLE; i++) {
     const s = document.createElement("div");
     s.className = "sparkle";

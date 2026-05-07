@@ -968,37 +968,54 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   animation: toastShow 2s ease forwards;
 }
 
-/* ===== 紙吹雪・キラキラ演出 ===== */
+/* ===== キラキラ・後光演出 ===== */
 .celebrate-layer {
   position: fixed;
   inset: 0;
   pointer-events: none;
   z-index: 1500;
-  overflow: hidden;
 }
-.confetti {
-  position: absolute;
-  top: -30px;
-  width: 12px;
-  height: 16px;
-  border-radius: 2px;
-  opacity: 0.95;
-  animation: confettiFall var(--dur, 3s) ease-in var(--delay, 0s) forwards;
-  will-change: transform, opacity;
+
+/* 後光：四方八方に伸びる光線（回転＋フェード） */
+.lightrays {
+  position: fixed;
+  top: 50%; left: 50%;
+  width: 2400px; height: 2400px;
+  margin-top: -1200px;
+  margin-left: -1200px;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(255, 230, 110, 0.6) 0deg 3deg,
+    rgba(255, 200, 80, 0.0)  3deg 12deg
+  );
+  border-radius: 50%;
+  -webkit-mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000 56%, transparent 92%);
+          mask-image: radial-gradient(circle, transparent 4%, #000 14%, #000 56%, transparent 92%);
+  filter: blur(0.4px) brightness(1.1);
+  pointer-events: none;
+  z-index: 1600;
+  animation:
+    rayRotate 5.5s linear infinite,
+    raysReveal 2.4s cubic-bezier(0.25, 0.7, 0.4, 1) forwards;
 }
-.confetti.shape-strip { border-radius: 2px; }
-.confetti.shape-circle { border-radius: 50%; height: 12px; }
-.confetti.shape-ribbon {
-  border-radius: 1px;
-  height: 22px; width: 6px;
+.lightrays.layer-2 {
+  background: repeating-conic-gradient(
+    from 7deg,
+    rgba(255, 250, 180, 0.55) 0deg 1.6deg,
+    rgba(255, 220, 100, 0.0)  1.6deg 11deg
+  );
+  filter: blur(0.6px) brightness(1.05);
+  animation:
+    rayRotateRev 7s linear infinite,
+    raysReveal 2.4s cubic-bezier(0.25, 0.7, 0.4, 1) forwards;
 }
-@keyframes confettiFall {
-  0%   { transform: translate(0, 0) rotate(0); opacity: 0; }
-  6%   { opacity: 1; }
-  100% {
-    transform: translate(var(--drift, 0px), 110vh) rotate(var(--spin, 720deg));
-    opacity: 0.85;
-  }
+@keyframes rayRotate    { from { transform: rotate(0deg); }   to { transform: rotate(360deg); } }
+@keyframes rayRotateRev { from { transform: rotate(0deg); }   to { transform: rotate(-360deg); } }
+@keyframes raysReveal {
+  0%   { opacity: 0; }
+  20%  { opacity: 1; }
+  70%  { opacity: 0.9; }
+  100% { opacity: 0; }
 }
 
 .sparkle {
