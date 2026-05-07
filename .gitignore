@@ -1,0 +1,6 @@
+.claude/
+*.xlsx
+*.xls
+.DS_Store
+Thumbs.db
+node_modules/

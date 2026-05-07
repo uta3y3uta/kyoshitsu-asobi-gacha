@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>教室あそびガチャ</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<header class="app-header">
+  <h1>🎰 教室あそびガチャ</h1>
+  <nav class="screen-nav">
+    <button class="nav-btn active" data-screen="gacha">ガチャ</button>
+    <button class="nav-btn" data-screen="collection">コレクション</button>
+    <button class="nav-btn" data-screen="settings">設定</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ===== ガチャ画面 ===== -->
+  <section id="screen-gacha" class="screen active">
+    <div class="gacha-stage">
+      <div class="machine">
+        <div class="machine-dome">
+          <div class="dome-inner" id="dome-inner"></div>
+          <div class="dome-glare"></div>
+        </div>
+        <div class="machine-neck"></div>
+        <div class="machine-body">
+          <div class="machine-label">あそびガチャ</div>
+          <div class="coin-slot"></div>
+          <div class="lever-mount">
+            <div class="lever" id="lever">
+              <div class="lever-knob"></div>
+            </div>
+          </div>
+          <div class="output-window">
+            <div class="output-flap"></div>
+          </div>
+        </div>
+        <div class="machine-base"></div>
+      </div>
+      <div class="capsule-fly" id="capsule-fly" hidden>
+        <div class="capsule-top"></div>
+        <div class="capsule-bottom"></div>
+      </div>
+    </div>
+
+    <div class="gacha-controls">
+      <label class="checkbox-row">
+        <input type="checkbox" id="allow-duplicate" />
+        <span>重複あり</span>
+      </label>
+      <button class="big-btn pull-btn" id="pull-btn">ガチャを回す！</button>
+    </div>
+  </section>
+
+  <!-- ===== コレクション画面 ===== -->
+  <section id="screen-collection" class="screen">
+    <div class="collection-header">
+      <h2>📚 コレクション</h2>
+      <div class="collection-meta">
+        <span id="collection-count">0 / 0</span>
+        <button class="ghost-btn" id="reset-collection-btn">リセット</button>
+      </div>
+    </div>
+    <div class="collection-grid" id="collection-grid"></div>
+  </section>
+
+  <!-- ===== 設定画面 ===== -->
+  <section id="screen-settings" class="screen">
+    <div class="settings-layout">
+      <div class="settings-main">
+        <div class="settings-toolbar">
+          <h2>⚙️ あそびを設定する</h2>
+          <div class="toolbar-actions">
+            <button class="ghost-btn" id="add-play-btn">＋ 追加</button>
+            <button class="ghost-btn" id="import-btn">📥 データを取り込み</button>
+            <button class="primary-btn" id="share-btn">🔗 完成→共有URL発行</button>
+          </div>
+        </div>
+        <div class="plays-list" id="plays-list"></div>
+      </div>
+      <aside class="settings-preview">
+        <h3>👀 プレビュー</h3>
+        <div class="preview-card" id="preview-card">
+          <div class="preview-empty">プレビューする項目を選んでください</div>
+        </div>
+      </aside>
+    </div>
+  </section>
+</main>
+
+<!-- ===== 結果モーダル ===== -->
+<div id="result-modal" class="modal hidden" aria-hidden="true">
+  <div class="result-stage" id="result-stage">
+    <div class="big-capsule" id="big-capsule">
+      <div class="big-capsule-top"></div>
+      <div class="big-capsule-bottom"></div>
+    </div>
+    <div class="result-content" id="result-content" hidden>
+      <div class="result-bond" id="result-bond"></div>
+      <div class="result-name" id="result-name"></div>
+      <div class="result-rule" id="result-rule"></div>
+      <button class="close-btn" id="result-close-btn">とじる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== インポートモーダル ===== -->
+<div id="import-modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <h3>📥 データを取り込み</h3>
+    <div class="import-tabs">
+      <button class="tab-btn active" data-tab="paste">コピペから</button>
+      <button class="tab-btn" data-tab="excel">Excelから</button>
+      <button class="tab-btn" data-tab="sheets">Googleスプレッドシートから</button>
+    </div>
+    <div class="import-body">
+      <div class="tab-pane active" data-pane="paste">
+        <p class="hint">表計算ソフトでコピーした内容を貼り付けてください。<br />
+        列の順番： <strong>名前 / ルール / 絆</strong>（絆は 1・2・3 または ⭐ で指定。空欄は「ー」になります）</p>
+        <textarea id="paste-input" placeholder="鬼ごっこ&#9;鬼に捕まったら…&#9;1&#10;伝言ゲーム&#9;…&#9;2"></textarea>
+      </div>
+      <div class="tab-pane" data-pane="excel">
+        <p class="hint">Excelファイル（.xlsx / .xls）を選んでください。1行目が見出しの場合は自動で除きます。<br />
+        列の順番： <strong>名前 / ルール / 絆</strong>（絆は 1・2・3）</p>
+        <input type="file" id="excel-input" accept=".xlsx,.xls" />
+      </div>
+      <div class="tab-pane" data-pane="sheets">
+        <p class="hint">公開した（または「リンクを知っている全員に閲覧」に設定した）Googleスプレッドシートの URL を貼り付けてください。</p>
+        <input type="text" id="sheets-url" placeholder="https://docs.google.com/spreadsheets/d/..." />
+        <p class="hint small">うまく取り込めない場合は、シートをコピーして「コピペから」のタブを使ってください。</p>
+      </div>
+    </div>
+    <div class="import-options">
+      <label class="checkbox-row">
+        <input type="checkbox" id="import-replace" />
+        <span>既存のデータを置き換える（チェックなしは追加）</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="import-has-header" checked />
+        <span>1行目は見出し（読み飛ばす）</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="import-cancel-btn">キャンセル</button>
+      <button class="primary-btn" id="import-apply-btn">取り込む</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== シェアモーダル ===== -->
+<div id="share-modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card">
+    <h3>🔗 共有URLが発行されました</h3>
+    <p>このURLを開くと、設定したあそびがそのまま再現できます。</p>
+    <textarea id="share-url" readonly></textarea>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="share-close-btn">閉じる</button>
+      <button class="primary-btn" id="share-copy-btn">URLをコピー</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 確認モーダル ===== -->
+<div id="confirm-modal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card small">
+    <h3 id="confirm-title">確認</h3>
+    <p id="confirm-message"></p>
+    <div class="modal-actions">
+      <button class="ghost-btn" id="confirm-cancel-btn">キャンセル</button>
+      <button class="primary-btn" id="confirm-ok-btn">OK</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="script.js"></script>
+</body>
+</html>
