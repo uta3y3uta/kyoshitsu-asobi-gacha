@@ -21,32 +21,56 @@
   <section id="screen-gacha" class="screen active">
     <div class="gacha-stage">
       <div class="machine">
-        <div class="machine-top-cap"></div>
-        <div class="glass-cube">
-          <div class="cube-side cube-side-r"></div>
-          <div class="cube-side cube-side-t"></div>
-          <div class="capsules-stack" id="dome-inner"></div>
-          <div class="glass-shine"></div>
-          <div class="glass-frame"></div>
+        <!-- 赤い天板 -->
+        <div class="part part-cap">
+          <div class="face face-front"></div>
+          <div class="face face-top"></div>
+          <div class="face face-right"></div>
+          <div class="cap-screw"></div>
         </div>
-        <div class="machine-mid">
-          <div class="brand-label">あそびガチャ</div>
-          <div class="coin-slot"></div>
-          <div class="knob-housing">
-            <div class="knob" id="lever">
-              <div class="knob-bar h"></div>
-              <div class="knob-bar v"></div>
-              <div class="knob-center"></div>
+        <!-- ガラスキューブ -->
+        <div class="part part-cube">
+          <div class="face face-front glass-face">
+            <div class="glass-shine"></div>
+          </div>
+          <div class="face face-right glass-face">
+            <div class="glass-shine right"></div>
+          </div>
+          <div class="face face-back glass-back"></div>
+          <div class="face face-bottom cube-floor"></div>
+          <div class="capsules-stack" id="dome-inner"></div>
+          <div class="cube-frame fr-tl"></div>
+          <div class="cube-frame fr-tr"></div>
+          <div class="cube-frame fr-bl"></div>
+          <div class="cube-frame fr-br"></div>
+        </div>
+        <!-- 中段（コインスロット・つまみ） -->
+        <div class="part part-mid">
+          <div class="face face-front">
+            <div class="brand-label">あそびガチャ</div>
+            <div class="coin-slot"></div>
+            <div class="knob-housing">
+              <div class="knob" id="lever">
+                <div class="knob-bar h"></div>
+                <div class="knob-bar v"></div>
+                <div class="knob-center"></div>
+              </div>
             </div>
           </div>
+          <div class="face face-top"></div>
+          <div class="face face-right"></div>
         </div>
-        <div class="machine-bottom">
-          <div class="output-door">
-            <div class="door-keyhole"></div>
-            <div class="door-arrow"></div>
+        <!-- 下段（取り出し口） -->
+        <div class="part part-bottom">
+          <div class="face face-front">
+            <div class="output-door">
+              <div class="door-keyhole"></div>
+              <div class="door-arrow"></div>
+            </div>
           </div>
+          <div class="face face-right"></div>
+          <div class="face face-bottom"></div>
         </div>
-        <div class="machine-base"></div>
       </div>
       <div class="capsule-fly" id="capsule-fly" hidden>
         <div class="capsule-bottom"></div>

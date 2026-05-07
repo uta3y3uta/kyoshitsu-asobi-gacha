@@ -56,131 +56,212 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .screen.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* ===== Gacha Machine (retro red) ===== */
+/* ===== Gacha Machine (3D retro red) ===== */
 .gacha-stage {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   position: relative;
-  min-height: 600px;
-  padding: 30px 0 20px;
-  perspective: 1400px;
+  min-height: 720px;
+  padding: 60px 0 40px;
+  perspective: 2200px;
+  perspective-origin: 60% 30%;
 }
+
+/* マシン全体：右上から見下ろす視点 */
 .machine {
   position: relative;
-  width: 280px;
+  width: 260px;
   transform-style: preserve-3d;
-  filter: drop-shadow(14px 18px 18px rgba(0,0,0,0.22));
+  transform: rotateX(14deg) rotateY(-26deg);
+  filter: drop-shadow(34px 38px 28px rgba(0,0,0,0.35));
+  --depth: 90px;       /* マシンの奥行き（Z） */
+  --red-l: #ff5050;    /* 明るめの赤 */
+  --red-m: #d92929;    /* 中間の赤 */
+  --red-d: #8a1010;    /* 影の赤 */
+  --red-vd: #4a0808;   /* もっとも暗い赤 */
 }
-.machine-top-cap {
-  width: 296px;
-  height: 22px;
-  margin: 0 auto -2px;
-  background: linear-gradient(180deg, #e63a3a 0%, #b92020 100%);
-  border-radius: 6px 6px 4px 4px;
-  box-shadow:
-    inset 0 2px 0 rgba(255,255,255,0.35),
-    inset -8px 0 0 rgba(0,0,0,0.18),
-    0 2px 0 rgba(0,0,0,0.15);
+
+/* 各セクションは3Dブロック */
+.part {
   position: relative;
-  z-index: 2;
+  width: 260px;
+  transform-style: preserve-3d;
 }
-/* === Glass cube === */
-.glass-cube {
-  position: relative;
-  width: 280px;
-  height: 240px;
-  background: linear-gradient(160deg, rgba(255,255,255,0.55) 0%, rgba(220,235,255,0.35) 100%);
-  border-radius: 4px;
+.part-cap    { height: 38px; }
+.part-cube   { height: 260px; }
+.part-mid    { height: 84px; }
+.part-bottom { height: 130px; }
+
+.face {
+  position: absolute;
+  top: 0; left: 0;
+  backface-visibility: hidden;
+}
+/* Z=0 の前面は通常レイアウト */
+.face-front {
+  width: 100%;
+  height: 100%;
+}
+/* 右側面：右端でY軸回転 */
+.face-right {
+  top: 0; left: 100%;
+  width: var(--depth);
+  height: 100%;
+  transform-origin: 0 0;
+  transform: rotateY(90deg);
+}
+/* 天面：上端でX軸回転 */
+.face-top {
+  bottom: 100%; left: 0;
+  width: 100%;
+  height: var(--depth);
+  transform-origin: 0 100%;
+  transform: rotateX(90deg);
+}
+/* 底面：下端でX軸回転 */
+.face-bottom {
+  top: 100%; left: 0;
+  width: 100%;
+  height: var(--depth);
+  transform-origin: 0 0;
+  transform: rotateX(-90deg);
+}
+/* 背面：奥に移動 */
+.face-back {
+  width: 100%; height: 100%;
+  transform: translateZ(calc(var(--depth) * -1));
+}
+
+/* === 天板 === */
+.part-cap .face-front {
+  background: linear-gradient(180deg, var(--red-l) 0%, var(--red-m) 70%, var(--red-d) 100%);
+  border-radius: 6px 6px 2px 2px;
+  box-shadow: inset 0 2px 0 rgba(255,255,255,0.4);
+}
+.part-cap .face-top {
+  background: linear-gradient(180deg, #ff7676 0%, var(--red-l) 60%, var(--red-m) 100%);
+  border-radius: 6px 6px 0 0;
+  box-shadow: inset 0 1px 2px rgba(255,255,255,0.5);
+}
+.part-cap .face-right {
+  background: linear-gradient(180deg, var(--red-d) 0%, var(--red-vd) 100%);
+  border-radius: 0 6px 2px 0;
+}
+.cap-screw {
+  position: absolute;
+  top: 6px; left: 50%;
+  transform: translate(-50%, 0) translateZ(0.5px);
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 30% 30%, #f0f0f0, #999);
+  box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4), 0 1px 0 rgba(0,0,0,0.2);
+  z-index: 5;
+}
+.cap-screw::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  background: linear-gradient(45deg, transparent 45%, #555 45%, #555 55%, transparent 55%);
+}
+
+/* === ガラスキューブ === */
+.glass-face {
+  background: linear-gradient(160deg, rgba(255,255,255,0.5) 0%, rgba(220,235,250,0.18) 60%, rgba(200,220,235,0.25) 100%);
+  border: 2px solid rgba(255,255,255,0.55);
   box-shadow:
-    inset 0 2px 6px rgba(255,255,255,0.7),
-    inset -10px 0 14px rgba(0,0,0,0.12);
-  overflow: hidden;
-  z-index: 1;
-}
-.cube-side {
-  position: absolute;
-  pointer-events: none;
-}
-.cube-side-r {
-  top: 0; right: 0; bottom: 0;
-  width: 18px;
-  background: linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.16));
-}
-.cube-side-t {
-  top: 0; left: 0; right: 0;
-  height: 12px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0));
-}
-.glass-frame {
-  position: absolute;
-  inset: 0;
-  border: 2px solid rgba(255,255,255,0.5);
-  border-radius: 4px;
-  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.06);
-  pointer-events: none;
+    inset 0 0 0 1px rgba(0,0,0,0.06),
+    inset 4px 6px 12px rgba(255,255,255,0.45);
+  backdrop-filter: blur(0.5px);
 }
 .glass-shine {
   position: absolute;
-  top: 8px; left: 14px;
-  width: 38px; height: 80%;
-  background: linear-gradient(160deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 60%);
+  top: 6%; left: 8%;
+  width: 30%; height: 70%;
+  background: linear-gradient(155deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0) 55%);
   border-radius: 50%;
   filter: blur(3px);
   pointer-events: none;
 }
+.glass-shine.right {
+  left: 16%; width: 24%; top: 8%;
+  background: linear-gradient(165deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 60%);
+}
+.glass-back {
+  background: linear-gradient(180deg, rgba(255,255,255,0.18), rgba(220,200,200,0.25));
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.cube-floor {
+  background: linear-gradient(180deg, var(--red-l), var(--red-m));
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+}
+/* キューブのアルミフレーム（4本の縦エッジ） */
+.cube-frame {
+  position: absolute;
+  width: 6px;
+  background: linear-gradient(180deg, #c0c0c0 0%, #888 50%, #b8b8b8 100%);
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25), 1px 0 2px rgba(0,0,0,0.2);
+  z-index: 4;
+}
+.cube-frame.fr-tl { top: -2px; left: -2px;  height: 102%; transform: translateZ(0.5px); }
+.cube-frame.fr-tr { top: -2px; left: calc(100% - 4px); height: 102%; transform: translateZ(0.5px); }
+.cube-frame.fr-bl { top: -2px; left: -2px;  height: 102%; transform: translateZ(calc(var(--depth) * -1 + 0.5px)); }
+.cube-frame.fr-br { top: -2px; left: calc(100% - 4px); height: 102%; transform: translateZ(calc(var(--depth) * -1 + 0.5px)); }
+
+/* カプセル：3D空間にランダム配置 */
 .capsules-stack {
   position: absolute;
-  inset: 8px 14px 8px 8px;
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-end;
-  justify-content: center;
-  gap: 4px 6px;
-  padding: 6px;
+  inset: 0;
+  transform-style: preserve-3d;
+  pointer-events: none;
 }
 .mini-capsule {
+  position: absolute;
   width: 36px; height: 36px;
   border-radius: 50%;
-  position: relative;
   background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 30%, transparent 55%),
-    linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.55) 50%, var(--cap-color, #ff8aab) 50%, var(--cap-color-dark, #d8516f) 100%);
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.4) 28%, transparent 52%),
+    linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.6) 50%, var(--cap-color, #ff8aab) 50%, var(--cap-color-dark, #d8516f) 100%);
   box-shadow:
     inset -3px -3px 6px rgba(0,0,0,0.18),
     inset 0 1px 2px rgba(255,255,255,0.7),
-    1px 2px 3px rgba(0,0,0,0.12);
+    1px 2px 3px rgba(0,0,0,0.18);
+  /* JS が --x, --y, --z, --rot を設定する */
+  left: var(--x);
+  top:  var(--y);
+  transform: translateZ(var(--z, 0px)) rotate(var(--rot, 0deg));
 }
 .mini-capsule::after {
   content: ""; position: absolute; left: 2px; right: 2px; top: 50%;
-  height: 1.5px; background: rgba(0,0,0,0.18);
+  height: 1.5px; background: rgba(0,0,0,0.2);
   transform: translateY(-1px);
   border-radius: 2px;
 }
 .mini-capsule.shaking {
-  animation: capsuleShake 0.55s ease-in-out;
+  animation: capsuleShake 0.6s ease-in-out;
 }
 @keyframes capsuleShake {
-  0%, 100% { transform: translate(0, 0) rotate(0); }
-  15% { transform: translate(-1px, -2px) rotate(-6deg); }
-  30% { transform: translate(2px, -1px) rotate(5deg); }
-  45% { transform: translate(-2px, 1px) rotate(-4deg); }
-  60% { transform: translate(1px, 2px) rotate(3deg); }
-  75% { transform: translate(-1px, -1px) rotate(-2deg); }
-  90% { transform: translate(1px, 1px) rotate(1deg); }
+  0%, 100% { transform: translateZ(var(--z, 0px)) rotate(var(--rot, 0deg)) translate(0, 0); }
+  15%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 8deg)) translate(-1px, -2px); }
+  30%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) + 7deg)) translate(2px, -1px); }
+  45%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 6deg)) translate(-2px, 1px); }
+  60%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) + 4deg)) translate(1px, 2px); }
+  80%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 2deg)) translate(-1px, 0); }
 }
 
-/* === Mid: coin slot + knob === */
-.machine-mid {
-  position: relative;
-  width: 280px;
-  height: 78px;
-  background: linear-gradient(180deg, #e63a3a 0%, #c92626 50%, #a91a1a 100%);
+/* === 中段 === */
+.part-mid .face-front {
+  background:
+    linear-gradient(180deg, var(--red-l) 0%, var(--red-m) 50%, var(--red-d) 100%);
   box-shadow:
-    inset 0 2px 0 rgba(255,255,255,0.25),
-    inset -10px 0 0 rgba(0,0,0,0.18),
-    inset 0 -2px 4px rgba(0,0,0,0.25);
-  z-index: 2;
+    inset 0 2px 0 rgba(255,255,255,0.3),
+    inset 0 -2px 3px rgba(0,0,0,0.3);
+}
+.part-mid .face-top {
+  background: linear-gradient(180deg, #ff8a8a 0%, var(--red-l) 100%);
+}
+.part-mid .face-right {
+  background: linear-gradient(180deg, var(--red-d) 0%, var(--red-vd) 100%);
 }
 .brand-label {
   position: absolute;
@@ -190,62 +271,71 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   font-weight: 900;
   color: #fff;
   letter-spacing: 3px;
-  text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.4);
   white-space: nowrap;
 }
 .coin-slot {
   position: absolute;
-  top: 24px; left: 24px;
+  top: 32px; left: 22px;
   width: 44px; height: 8px;
   background: #1a0808;
   border-radius: 1px;
   box-shadow:
-    inset 0 2px 3px rgba(0,0,0,0.6),
-    0 1px 0 rgba(255,255,255,0.25);
+    inset 0 2px 3px rgba(0,0,0,0.7),
+    0 1px 0 rgba(255,255,255,0.3);
 }
 .coin-slot::before {
   content: "";
   position: absolute;
   top: -8px; left: -6px; right: -6px; bottom: -8px;
-  border: 2px solid rgba(255,255,255,0.18);
+  border: 2px solid rgba(255,255,255,0.22);
   border-radius: 4px;
 }
 .knob-housing {
   position: absolute;
-  top: 16px; right: 22px;
-  width: 56px; height: 56px;
+  top: 18px; right: 22px;
+  width: 58px; height: 58px;
   border-radius: 50%;
   background:
-    radial-gradient(circle at 35% 30%, #fafafa 0%, #cccccc 40%, #777 90%);
+    radial-gradient(circle at 35% 30%, #fafafa 0%, #b8b8b8 50%, #666 100%);
   box-shadow:
-    inset 0 -3px 6px rgba(0,0,0,0.4),
-    inset 0 2px 3px rgba(255,255,255,0.7),
-    1px 2px 3px rgba(0,0,0,0.35);
+    inset 0 -4px 8px rgba(0,0,0,0.45),
+    inset 0 3px 4px rgba(255,255,255,0.7),
+    2px 3px 5px rgba(0,0,0,0.4);
   display: flex; align-items: center; justify-content: center;
 }
+.knob-housing::before {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f8f8f8, #999);
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.3), inset 0 2px 3px rgba(255,255,255,0.6);
+}
 .knob {
-  width: 42px; height: 42px;
+  width: 44px; height: 44px;
   position: relative;
   transform-origin: 50% 50%;
-  transition: transform 1.4s cubic-bezier(0.18, 0.7, 0.25, 1);
+  transition: transform 0.18s cubic-bezier(0.2, 0.9, 0.3, 1.4);
   cursor: pointer;
+  z-index: 2;
 }
-.knob.spinning { transform: rotate(720deg); }
 .knob-bar {
   position: absolute;
   top: 50%; left: 50%;
-  background: linear-gradient(180deg, #f5f5f5 0%, #999 100%);
+  background: linear-gradient(180deg, #fafafa 0%, #888 100%);
   border-radius: 2px;
   box-shadow:
-    inset 0 1px 1px rgba(255,255,255,0.7),
-    0 1px 2px rgba(0,0,0,0.4);
+    inset 0 1px 1px rgba(255,255,255,0.8),
+    inset 0 -1px 1px rgba(0,0,0,0.3),
+    0 1px 2px rgba(0,0,0,0.5);
 }
 .knob-bar.h {
-  width: 42px; height: 10px;
+  width: 44px; height: 10px;
   transform: translate(-50%, -50%);
 }
 .knob-bar.v {
-  width: 10px; height: 42px;
+  width: 10px; height: 44px;
   transform: translate(-50%, -50%);
 }
 .knob-center {
@@ -258,28 +348,32 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   box-shadow: inset 0 -1px 2px rgba(0,0,0,0.4);
 }
 
-/* === Bottom: output door === */
-.machine-bottom {
-  position: relative;
-  width: 280px;
-  height: 130px;
-  background: linear-gradient(180deg, #d62a2a 0%, #a31818 100%);
-  border-radius: 0 0 6px 6px;
+/* === 下段 === */
+.part-bottom .face-front {
+  background: linear-gradient(180deg, var(--red-m) 0%, var(--red-d) 100%);
+  border-radius: 0 0 4px 4px;
   box-shadow:
-    inset -10px 0 0 rgba(0,0,0,0.2),
-    inset 0 -4px 6px rgba(0,0,0,0.3);
+    inset -3px 0 4px rgba(0,0,0,0.18),
+    inset 0 -2px 4px rgba(0,0,0,0.3);
+}
+.part-bottom .face-right {
+  background: linear-gradient(180deg, var(--red-d) 0%, var(--red-vd) 100%);
+  border-radius: 0 0 4px 0;
+}
+.part-bottom .face-bottom {
+  background: linear-gradient(90deg, var(--red-vd), #2a0303);
 }
 .output-door {
   position: absolute;
   top: 18px; left: 50%;
   transform: translateX(-50%);
-  width: 130px; height: 90px;
-  background: linear-gradient(180deg, #d8d8d8 0%, #9a9a9a 60%, #6a6a6a 100%);
+  width: 130px; height: 92px;
+  background: linear-gradient(180deg, #e8e8e8 0%, #9a9a9a 60%, #5a5a5a 100%);
   border-radius: 4px;
   box-shadow:
-    inset 0 2px 4px rgba(255,255,255,0.6),
-    inset 0 -3px 5px rgba(0,0,0,0.3),
-    0 1px 2px rgba(0,0,0,0.25);
+    inset 0 2px 4px rgba(255,255,255,0.7),
+    inset 0 -3px 6px rgba(0,0,0,0.35),
+    1px 2px 3px rgba(0,0,0,0.3);
 }
 .door-keyhole {
   position: absolute;
@@ -288,7 +382,7 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   width: 12px; height: 12px;
   background: #1a0808;
   border-radius: 50%;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.35);
+  box-shadow: inset 0 1px 2px rgba(0,0,0,0.8), 0 1px 0 rgba(255,255,255,0.4);
 }
 .door-arrow {
   position: absolute;
@@ -297,8 +391,8 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   width: 0; height: 0;
   border-left: 22px solid transparent;
   border-right: 22px solid transparent;
-  border-top: 24px solid #4a4a4a;
-  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.4));
+  border-top: 24px solid #3a3a3a;
+  filter: drop-shadow(0 1px 0 rgba(255,255,255,0.5));
 }
 .door-arrow::after {
   content: "";
@@ -306,15 +400,7 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   top: -28px; left: -14px;
   border-left: 14px solid transparent;
   border-right: 14px solid transparent;
-  border-top: 16px solid #4a4a4a;
-}
-.machine-base {
-  width: 296px;
-  height: 14px;
-  background: linear-gradient(180deg, #7a1010 0%, #4a0808 100%);
-  margin: -2px auto 0;
-  border-radius: 0 0 4px 4px;
-  box-shadow: inset 0 1px 2px rgba(255,255,255,0.15), 0 4px 8px rgba(0,0,0,0.3);
+  border-top: 16px solid #3a3a3a;
 }
 
 /* ===== Capsule fly animation ===== */

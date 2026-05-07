@@ -3,7 +3,8 @@
    ========================================================= */
 
 // ---------- 設定 ----------
-const STORAGE_KEY = "kyoshitsu-asobi-gacha-v1";
+const STORAGE_KEY        = "kyoshitsu-asobi-gacha-v1";        // 自分用（編集者）
+const STORAGE_KEY_SHARED = "kyoshitsu-asobi-gacha-shared-v1"; // 共有URLからのプレイヤー用
 const MODEL_COUNT = 50; // 1〜50はモデルあそび枠
 const CAPSULE_COLORS = [
   "#ff7aa2", "#ffae5a", "#ffd66e", "#a8e063",
@@ -31,6 +32,7 @@ let state = {
 };
 let nextId = 1;
 let isSpinning = false;
+let isSharedView = false; // 共有URL（#d=...）から開かれた場合 true
 
 // ---------- 初期化 ----------
 window.addEventListener("DOMContentLoaded", () => {
@@ -41,11 +43,14 @@ function init() {
   // URLハッシュからの復元 → なければ localStorage → なければデフォルト
   const fromUrl = readFromHash();
   if (fromUrl) {
+    isSharedView = true;
     state.plays = fromUrl.plays || [];
     state.allowDuplicate = !!fromUrl.allowDuplicate;
     nextId = computeNextId();
-    persist(); // 取り込んだ内容をlocalStorageに保存
-    history.replaceState(null, "", location.pathname + location.search);
+    // コレクション（プレイヤー側の進行状況）だけ shared 用ストレージから復元
+    const saved = loadLocal();
+    if (saved && saved.collection) state.collection = saved.collection;
+    // 共有URLは保持したままにする（リロード時も共有モードを維持）
   } else {
     const saved = loadLocal();
     if (saved) {
@@ -57,6 +62,9 @@ function init() {
       seedDefaultPlays();
     }
   }
+
+  // 共有URLビューでは設定タブを隠す
+  if (isSharedView) applySharedView();
 
   // ドーム内のミニカプセル装飾
   renderDomeCapsules();
@@ -103,20 +111,46 @@ function computeNextId() {
 }
 
 // ---------- 永続化 ----------
+function activeStorageKey() {
+  return isSharedView ? STORAGE_KEY_SHARED : STORAGE_KEY;
+}
 function persist() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-      plays: state.plays,
-      collection: state.collection,
-      allowDuplicate: state.allowDuplicate,
-    }));
+    if (isSharedView) {
+      // 共有モードでは plays は URL 側が真とし、コレクションだけ保存
+      localStorage.setItem(activeStorageKey(), JSON.stringify({
+        collection: state.collection,
+      }));
+    } else {
+      localStorage.setItem(activeStorageKey(), JSON.stringify({
+        plays: state.plays,
+        collection: state.collection,
+        allowDuplicate: state.allowDuplicate,
+      }));
+    }
   } catch (e) { /* ignore quota */ }
 }
 function loadLocal() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(activeStorageKey());
     return raw ? JSON.parse(raw) : null;
   } catch (e) { return null; }
+}
+
+// 共有ビュー：設定タブと「URL末尾のhashを書き換える」処理を抑制
+function applySharedView() {
+  const settingsBtn = document.querySelector('.nav-btn[data-screen="settings"]');
+  if (settingsBtn) settingsBtn.style.display = "none";
+  const settingsScreen = document.getElementById("screen-settings");
+  if (settingsScreen) {
+    settingsScreen.classList.remove("active");
+    settingsScreen.style.display = "none";
+  }
+  // ガチャ画面が確実に表示
+  document.querySelectorAll(".nav-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.screen === "gacha"));
+  document.querySelectorAll(".screen").forEach((s) =>
+    s.classList.toggle("active", s.id === "screen-gacha"));
 }
 
 // ---------- URLハッシュ ----------
@@ -183,17 +217,38 @@ function bindGacha() {
 function renderDomeCapsules() {
   const dome = document.getElementById("dome-inner");
   dome.innerHTML = "";
-  // 4列 x 4行 ぐらい敷き詰める
-  for (let i = 0; i < 24; i++) {
+  // ガラスキューブ内にカプセルをランダムに散らばせる
+  const NUM = 38;
+  // 重なり方を自然にしたいので、下のほうに集中 + 一部上にも
+  const positions = [];
+  for (let i = 0; i < NUM; i++) {
+    // x: 4〜78%（カプセル幅36px=約13%, キューブ280px）
+    const x = 4 + Math.random() * 74;
+    // y: 重力風の分布。下半分に集中、一部は上にも
+    const yBase = Math.pow(Math.random(), 0.45); // 0近くが少なく1近くが多い
+    const y = 6 + yBase * 80;
+    // z: -50〜+5px（手前に少し、奥に深く）
+    const z = -52 + Math.random() * 56;
+    const rot = Math.floor(Math.random() * 360);
+    positions.push({ x, y, z, rot });
+  }
+  // z(奥行き)で並び替えて、奥にあるものを先に描画（手前を後にしてオーバーラップを自然に）
+  positions.sort((a, b) => a.z - b.z);
+
+  positions.forEach((p, i) => {
     const el = document.createElement("div");
     el.className = "mini-capsule";
-    const { c, d } = colorPair(i + Math.floor(i / 6));
+    const colorIdx = (i * 7 + 3) % CAPSULE_COLORS.length; // 色をばらつかせる
+    const { c, d } = colorPair(colorIdx + Math.floor(Math.random() * CAPSULE_COLORS.length));
     el.style.setProperty("--cap-color", c);
     el.style.setProperty("--cap-color-dark", d);
-    // 揺れ開始タイミングをばらけさせる
-    el.style.animationDelay = (Math.random() * 0.25).toFixed(3) + "s";
+    el.style.setProperty("--x", p.x.toFixed(1) + "%");
+    el.style.setProperty("--y", p.y.toFixed(1) + "%");
+    el.style.setProperty("--z", p.z.toFixed(1) + "px");
+    el.style.setProperty("--rot", p.rot + "deg");
+    el.style.animationDelay = (Math.random() * 0.18).toFixed(3) + "s";
     dome.appendChild(el);
-  }
+  });
 }
 
 function getEligiblePlays() {
@@ -220,22 +275,35 @@ function pullGacha() {
   const pickedIndex = Math.floor(Math.random() * pool.length);
   const picked = pool[pickedIndex];
 
-  // (1) つまみが2回転する（CSSで720°）
+  // (1) つまみを 120°→240°→360° と3段階で「ガチャ・ガチャ・ガチャ」と回す
   const lever = document.getElementById("lever");
-  lever.classList.remove("spinning");
-  void lever.offsetWidth; // reflow
-  lever.classList.add("spinning");
+  lever.style.transform = "rotate(0deg)";
+  void lever.offsetWidth;
+  setTimeout(() => { lever.style.transform = "rotate(120deg)"; }, 50);
+  setTimeout(() => { lever.style.transform = "rotate(240deg)"; }, 480);
+  setTimeout(() => { lever.style.transform = "rotate(360deg)"; }, 910);
 
-  // (2) ドーム内のカプセルが揺れる（少し遅れて開始）
+  // (2) 1回目の手応えに合わせて、キューブ内のカプセルが少し揺れる
   setTimeout(() => {
     document.querySelectorAll(".mini-capsule").forEach((el) => {
       el.classList.remove("shaking");
       void el.offsetWidth;
       el.classList.add("shaking");
     });
-  }, 450);
+  }, 220);
+  // 2回目・3回目の手応えで再揺らし
+  setTimeout(() => {
+    document.querySelectorAll(".mini-capsule").forEach((el) => {
+      el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking");
+    });
+  }, 650);
+  setTimeout(() => {
+    document.querySelectorAll(".mini-capsule").forEach((el) => {
+      el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking");
+    });
+  }, 1080);
 
-  // (3) つまみの回転が終わる頃に、カプセルが排出口から出てくる
+  // (3) 3回目の回転完了頃にカプセルが排出口から出てくる
   const colorIdx = Math.floor(Math.random() * CAPSULE_COLORS.length);
   const { c: color, d: colorDark } = colorPair(colorIdx);
   const fly = document.getElementById("capsule-fly");
@@ -247,18 +315,17 @@ function pullGacha() {
     fly.classList.remove("dropping");
     void fly.offsetWidth;
     fly.classList.add("dropping");
-  }, 1450);
+  }, 1500);
 
   // (4) 結果モーダルを表示
   setTimeout(() => {
     fly.hidden = true;
     fly.classList.remove("dropping");
-    // 揺れアニメーションをリセット
     document.querySelectorAll(".mini-capsule.shaking").forEach((el) => el.classList.remove("shaking"));
     showResult(picked, color, { colorDark });
     isSpinning = false;
     if (btn) btn.disabled = false;
-  }, 2350);
+  }, 2400);
 }
 
 // ---------- 結果モーダル ----------
