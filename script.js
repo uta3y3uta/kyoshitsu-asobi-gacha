@@ -10,6 +10,16 @@ const CAPSULE_COLORS = [
   "#5dd6c2", "#5dbef7", "#9d8df1", "#d792f0",
   "#ff8a8a", "#7ed957", "#56ccf2", "#bb6bd9"
 ];
+// 同じ色相でやや濃い影色（カプセル下半分のグラデーション用）
+const CAPSULE_COLORS_DARK = [
+  "#d8516f", "#d88636", "#cfa83a", "#7eb83f",
+  "#36a892", "#3494d0", "#6e62cc", "#a865c0",
+  "#d65c5c", "#56a838", "#3aa3c8", "#8d49a8"
+];
+function colorPair(idx) {
+  const i = ((idx % CAPSULE_COLORS.length) + CAPSULE_COLORS.length) % CAPSULE_COLORS.length;
+  return { c: CAPSULE_COLORS[i], d: CAPSULE_COLORS_DARK[i] };
+}
 const BOND_LABELS = ["ー", "⭐", "⭐⭐", "⭐⭐⭐"];
 
 // ---------- 状態 ----------
@@ -173,10 +183,15 @@ function bindGacha() {
 function renderDomeCapsules() {
   const dome = document.getElementById("dome-inner");
   dome.innerHTML = "";
-  for (let i = 0; i < 14; i++) {
+  // 4列 x 4行 ぐらい敷き詰める
+  for (let i = 0; i < 24; i++) {
     const el = document.createElement("div");
     el.className = "mini-capsule";
-    el.style.background = CAPSULE_COLORS[i % CAPSULE_COLORS.length];
+    const { c, d } = colorPair(i + Math.floor(i / 6));
+    el.style.setProperty("--cap-color", c);
+    el.style.setProperty("--cap-color-dark", d);
+    // 揺れ開始タイミングをばらけさせる
+    el.style.animationDelay = (Math.random() * 0.25).toFixed(3) + "s";
     dome.appendChild(el);
   }
 }
@@ -200,31 +215,50 @@ function pullGacha() {
     return;
   }
   isSpinning = true;
+  const btn = document.getElementById("pull-btn");
+  if (btn) btn.disabled = true;
   const pickedIndex = Math.floor(Math.random() * pool.length);
   const picked = pool[pickedIndex];
 
-  // レバー回転
+  // (1) つまみが2回転する（CSSで720°）
   const lever = document.getElementById("lever");
   lever.classList.remove("spinning");
   void lever.offsetWidth; // reflow
   lever.classList.add("spinning");
 
-  // カプセルが落ちる
-  const fly = document.getElementById("capsule-fly");
-  const color = CAPSULE_COLORS[Math.floor(Math.random() * CAPSULE_COLORS.length)];
-  fly.style.setProperty("--cap-color", color);
-  fly.hidden = false;
-  fly.classList.remove("dropping");
-  void fly.offsetWidth;
-  fly.classList.add("dropping");
+  // (2) ドーム内のカプセルが揺れる（少し遅れて開始）
+  setTimeout(() => {
+    document.querySelectorAll(".mini-capsule").forEach((el) => {
+      el.classList.remove("shaking");
+      void el.offsetWidth;
+      el.classList.add("shaking");
+    });
+  }, 450);
 
-  // 結果モーダルへ
+  // (3) つまみの回転が終わる頃に、カプセルが排出口から出てくる
+  const colorIdx = Math.floor(Math.random() * CAPSULE_COLORS.length);
+  const { c: color, d: colorDark } = colorPair(colorIdx);
+  const fly = document.getElementById("capsule-fly");
+  fly.style.setProperty("--cap-color", color);
+  fly.style.setProperty("--cap-color-dark", colorDark);
+
+  setTimeout(() => {
+    fly.hidden = false;
+    fly.classList.remove("dropping");
+    void fly.offsetWidth;
+    fly.classList.add("dropping");
+  }, 1450);
+
+  // (4) 結果モーダルを表示
   setTimeout(() => {
     fly.hidden = true;
     fly.classList.remove("dropping");
-    showResult(picked, color);
+    // 揺れアニメーションをリセット
+    document.querySelectorAll(".mini-capsule.shaking").forEach((el) => el.classList.remove("shaking"));
+    showResult(picked, color, { colorDark });
     isSpinning = false;
-  }, 1100);
+    if (btn) btn.disabled = false;
+  }, 2350);
 }
 
 // ---------- 結果モーダル ----------
@@ -243,6 +277,7 @@ function showResult(play, color, opts = {}) {
   const cap = document.getElementById("big-capsule");
   const content = document.getElementById("result-content");
   cap.style.setProperty("--cap-color", color);
+  if (opts.colorDark) cap.style.setProperty("--cap-color-dark", opts.colorDark);
   cap.classList.remove("opening");
   content.hidden = true;
 
@@ -294,15 +329,18 @@ function renderCollection() {
     const card = document.createElement("div");
     const unlocked = collected.has(p.id);
     card.className = "col-card" + (unlocked ? "" : " locked");
-    const color = CAPSULE_COLORS[idx % CAPSULE_COLORS.length];
+    const { c: color, d: colorDark } = colorPair(idx);
+    const styleStr = unlocked
+      ? `--cap-color:${color};--cap-color-dark:${colorDark}`
+      : ``;
     card.innerHTML = `
-      <div class="col-cap" style="--cap-color:${unlocked ? color : "#cdcdd6"}"></div>
+      <div class="col-cap" style="${styleStr}"></div>
       <div class="col-name">${unlocked ? escapeHtml(p.name) : "？？？？"}</div>
       <div class="col-bond">${unlocked ? bondText(p.bond) : ""}</div>
     `;
     if (unlocked) {
       card.addEventListener("click", () => {
-        showResult(p, color, { fromCollection: true });
+        showResult(p, color, { fromCollection: true, colorDark });
       });
     }
     grid.appendChild(card);
@@ -400,9 +438,9 @@ function updatePreview() {
     return;
   }
   const idx = state.plays.indexOf(p);
-  const color = CAPSULE_COLORS[idx % CAPSULE_COLORS.length];
+  const { c: color, d: colorDark } = colorPair(idx);
   card.innerHTML = `
-    <div class="preview-cap" style="--cap-color:${color}"></div>
+    <div class="preview-cap" style="--cap-color:${color};--cap-color-dark:${colorDark}"></div>
     <div class="preview-bond">${bondText(p.bond)}</div>
     <div class="preview-name">${escapeHtml(p.name || "(名前なし)")}</div>
     <div class="preview-rule">${escapeHtml(p.rule || "")}</div>
