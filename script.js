@@ -339,12 +339,17 @@ function pullGacha() {
   fly.style.setProperty("--cap-color", color);
   fly.style.setProperty("--cap-color-dark", colorDark);
 
+  // (3a) ふた（取り出し口）がパカッと開く
+  const door = document.getElementById("output-door");
+  setTimeout(() => { if (door) door.classList.add("opening"); }, 1380);
   setTimeout(() => {
     fly.hidden = false;
     fly.classList.remove("dropping");
     void fly.offsetWidth;
     fly.classList.add("dropping");
   }, 1500);
+  // ふたを閉じる
+  setTimeout(() => { if (door) door.classList.remove("opening"); }, 2330);
 
   // (4) 結果モーダルを表示
   setTimeout(() => {

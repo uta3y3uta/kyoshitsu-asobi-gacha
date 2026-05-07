@@ -342,6 +342,7 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   box-shadow:
     inset -3px 0 4px rgba(0,0,0,0.18),
     inset 0 -2px 4px rgba(0,0,0,0.3);
+  perspective: 800px;
 }
 .part-bottom .face-right {
   background: linear-gradient(180deg, var(--red-d) 0%, var(--red-vd) 100%);
@@ -350,10 +351,31 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .part-bottom .face-bottom {
   background: linear-gradient(90deg, var(--red-vd), #2a0303);
 }
-.output-door {
+/* 取り出し口の奥（暗いキャビティ）— ふたが開くと見える */
+.output-cavity {
   position: absolute;
   top: 18px; left: 50%;
   transform: translateX(-50%);
+  width: 130px; height: 92px;
+  background:
+    radial-gradient(ellipse at 50% 30%, #2a1414 0%, #110505 60%, #050202 100%);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 4px 10px rgba(0,0,0,0.85),
+    inset 0 -2px 4px rgba(80,20,20,0.3);
+  z-index: 1;
+}
+.output-cavity::after {
+  /* 奥のさらに暗い穴感を強調 */
+  content: "";
+  position: absolute;
+  inset: 16px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.6), transparent 70%);
+  filter: blur(6px);
+}
+.output-door {
+  position: absolute;
+  top: 18px; left: 50%;
   width: 130px; height: 92px;
   background: linear-gradient(180deg, #e8e8e8 0%, #9a9a9a 60%, #5a5a5a 100%);
   border-radius: 4px;
@@ -361,6 +383,22 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
     inset 0 2px 4px rgba(255,255,255,0.7),
     inset 0 -3px 6px rgba(0,0,0,0.35),
     1px 2px 3px rgba(0,0,0,0.3);
+  z-index: 2;
+  /* 上端をヒンジにして奥に倒れる */
+  transform: translateX(-50%) rotateX(0deg);
+  transform-origin: 50% 0%;
+  transition: transform 0.32s cubic-bezier(0.4, 0.05, 0.55, 1);
+  backface-visibility: visible;
+}
+.output-door.opening {
+  /* パカッと奥に開く（72deg奥に倒れる） */
+  transform: translateX(-50%) rotateX(72deg);
+}
+.output-door.opening {
+  box-shadow:
+    inset 0 2px 4px rgba(255,255,255,0.7),
+    inset 0 -3px 6px rgba(0,0,0,0.35),
+    1px 6px 10px rgba(0,0,0,0.45);
 }
 .door-keyhole {
   position: absolute;
@@ -394,7 +432,7 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .capsule-fly {
   position: absolute;
   width: 76px; height: 76px;
-  bottom: 38px;
+  bottom: 70px;
   left: calc(50% - 38px);
   z-index: 10;
   opacity: 0;
