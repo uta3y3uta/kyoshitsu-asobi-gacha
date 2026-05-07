@@ -215,7 +215,7 @@ function bindGacha() {
   document.getElementById("lever").addEventListener("click", pullGacha);
 }
 
-const NUM_CAPSULES = 50;
+const NUM_CAPSULES = 80;
 function randomCapsulePosition() {
   // カプセル54pxはキューブ280pxの約19%。x: 0〜80%
   const x = Math.random() * 80;
@@ -400,8 +400,78 @@ function showResult(play, color, opts = {}) {
     cap.classList.add("opening");
     setTimeout(() => {
       content.hidden = false;
+      celebrate();
     }, 380);
   }, opts.fromCollection ? 200 : 700);
+}
+
+// ---------- 紙吹雪・キラキラ ----------
+function celebrate() {
+  // 既存レイヤがあれば消す（連続再生対策）
+  document.querySelectorAll(".celebrate-layer").forEach((l) => l.remove());
+
+  const layer = document.createElement("div");
+  layer.className = "celebrate-layer";
+  document.body.appendChild(layer);
+
+  // 中央のグロー
+  const stage = document.getElementById("result-stage");
+  if (stage) {
+    stage.classList.remove("celebrate");
+    void stage.offsetWidth;
+    stage.classList.add("celebrate");
+  }
+
+  // 紙吹雪：左右に分けて発射 + 全画面でも降らせる
+  const confettiColors = [
+    "#ff5050", "#ff8a3a", "#ffd640", "#a8e063", "#5dd6c2",
+    "#5dbef7", "#9d8df1", "#d792f0", "#ff8aab", "#ffe27a",
+  ];
+  const shapes = ["shape-strip", "shape-circle", "shape-ribbon"];
+  const N_CONFETTI = 110;
+  for (let i = 0; i < N_CONFETTI; i++) {
+    const c = document.createElement("div");
+    const shape = shapes[Math.floor(Math.random() * shapes.length)];
+    c.className = "confetti " + shape;
+    const left = Math.random() * 100;
+    const drift = (Math.random() - 0.5) * 360;
+    const spin = (Math.random() - 0.5) * 1600;
+    const dur = 2.4 + Math.random() * 2.0;
+    const delay = Math.random() * 0.55;
+    const color = confettiColors[Math.floor(Math.random() * confettiColors.length)];
+    const sizeW = 6 + Math.random() * 10;
+    const sizeH = 10 + Math.random() * 14;
+    c.style.left = left + "vw";
+    c.style.background = color;
+    c.style.width = sizeW.toFixed(0) + "px";
+    c.style.height = sizeH.toFixed(0) + "px";
+    c.style.setProperty("--drift", drift.toFixed(0) + "px");
+    c.style.setProperty("--spin", spin.toFixed(0) + "deg");
+    c.style.setProperty("--dur", dur.toFixed(2) + "s");
+    c.style.setProperty("--delay", delay.toFixed(2) + "s");
+    layer.appendChild(c);
+  }
+
+  // キラキラ
+  const N_SPARKLE = 32;
+  for (let i = 0; i < N_SPARKLE; i++) {
+    const s = document.createElement("div");
+    s.className = "sparkle";
+    const x = Math.random() * 100;
+    const y = 6 + Math.random() * 80;
+    const dur = 1.0 + Math.random() * 1.0;
+    const delay = Math.random() * 1.6;
+    const scale = 0.7 + Math.random() * 1.0;
+    s.style.left = x + "vw";
+    s.style.top = y + "vh";
+    s.style.transform = `scale(${scale})`;
+    s.style.setProperty("--dur", dur.toFixed(2) + "s");
+    s.style.setProperty("--delay", delay.toFixed(2) + "s");
+    layer.appendChild(s);
+  }
+
+  // 後始末
+  setTimeout(() => layer.remove(), 5500);
 }
 
 function bondText(b) {
