@@ -56,42 +56,43 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
 .screen.active { display: block; }
 @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
-/* ===== Gacha Machine (3D retro red) ===== */
+/* ===== Gacha Machine (front view, retro red) ===== */
 .gacha-stage {
   display: flex;
   justify-content: center;
   align-items: flex-end;
   position: relative;
-  min-height: 720px;
-  padding: 60px 0 40px;
-  perspective: 2200px;
-  perspective-origin: 60% 30%;
+  min-height: 600px;
+  padding: 30px 0 20px;
 }
 
-/* マシン全体：右上から見下ろす視点 */
+/* マシン全体：正面ビュー */
 .machine {
   position: relative;
-  width: 260px;
-  transform-style: preserve-3d;
-  transform: rotateX(14deg) rotateY(-26deg);
-  filter: drop-shadow(34px 38px 28px rgba(0,0,0,0.35));
-  --depth: 90px;       /* マシンの奥行き（Z） */
-  --red-l: #ff5050;    /* 明るめの赤 */
-  --red-m: #d92929;    /* 中間の赤 */
-  --red-d: #8a1010;    /* 影の赤 */
-  --red-vd: #4a0808;   /* もっとも暗い赤 */
+  width: 280px;
+  filter: drop-shadow(8px 16px 18px rgba(0,0,0,0.22));
+  --red-l: #ff5050;
+  --red-m: #d92929;
+  --red-d: #8a1010;
+  --red-vd: #4a0808;
 }
 
-/* 各セクションは3Dブロック */
+/* 各セクション */
 .part {
   position: relative;
-  width: 260px;
-  transform-style: preserve-3d;
+  width: 280px;
 }
-.part-cap    { height: 38px; }
-.part-cube   { height: 260px; }
+.part-cap    { height: 28px; }
+.part-cube   { height: 280px; }
 .part-mid    { height: 84px; }
 .part-bottom { height: 130px; }
+
+/* 正面ビューでは前面以外は隠す */
+.face-right, .face-top, .face-bottom, .face-back,
+.cube-frame.fr-bl, .cube-frame.fr-br {
+  display: none;
+}
+.cap-screw { display: none; } /* 上面のネジは正面からは見せない */
 
 .face {
   position: absolute;
@@ -226,10 +227,11 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
     inset -3px -3px 6px rgba(0,0,0,0.18),
     inset 0 1px 2px rgba(255,255,255,0.7),
     1px 2px 3px rgba(0,0,0,0.18);
-  /* JS が --x, --y, --z, --rot を設定する */
+  /* JS が --x, --y, --rot を設定する */
   left: var(--x);
   top:  var(--y);
-  transform: translateZ(var(--z, 0px)) rotate(var(--rot, 0deg));
+  transform: rotate(var(--rot, 0deg));
+  transition: top 0.42s cubic-bezier(0.4, 0.1, 0.3, 1.05), left 0.42s cubic-bezier(0.4, 0.1, 0.3, 1.05);
 }
 .mini-capsule::after {
   content: ""; position: absolute; left: 2px; right: 2px; top: 50%;
@@ -238,15 +240,14 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   border-radius: 2px;
 }
 .mini-capsule.shaking {
-  animation: capsuleShake 0.6s ease-in-out;
+  animation: capsuleShake 0.45s ease-in-out;
 }
 @keyframes capsuleShake {
-  0%, 100% { transform: translateZ(var(--z, 0px)) rotate(var(--rot, 0deg)) translate(0, 0); }
-  15%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 8deg)) translate(-1px, -2px); }
-  30%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) + 7deg)) translate(2px, -1px); }
-  45%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 6deg)) translate(-2px, 1px); }
-  60%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) + 4deg)) translate(1px, 2px); }
-  80%      { transform: translateZ(var(--z, 0px)) rotate(calc(var(--rot, 0deg) - 2deg)) translate(-1px, 0); }
+  0%, 100% { transform: rotate(var(--rot, 0deg)) translate(0, 0); }
+  20%      { transform: rotate(calc(var(--rot, 0deg) - 9deg)) translate(-2px, -2px); }
+  40%      { transform: rotate(calc(var(--rot, 0deg) + 8deg)) translate(2px, -1px); }
+  60%      { transform: rotate(calc(var(--rot, 0deg) - 6deg)) translate(-2px, 1px); }
+  80%      { transform: rotate(calc(var(--rot, 0deg) + 3deg)) translate(1px, 2px); }
 }
 
 /* === 中段 === */
@@ -702,7 +703,16 @@ main { padding: 20px; max-width: 1200px; margin: 0 auto; }
   margin-bottom: 14px;
 }
 .settings-toolbar h2 { margin: 0; font-size: 20px; }
-.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.toolbar-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.play-counter {
+  font-size: 13px;
+  font-weight: 700;
+  color: #666;
+  background: #f0ecf5;
+  padding: 4px 10px;
+  border-radius: 999px;
+}
+.play-counter.full { color: #c12828; background: #ffe5e5; }
 .ghost-btn {
   padding: 8px 14px;
   border-radius: 8px;

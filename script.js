@@ -5,7 +5,8 @@
 // ---------- 設定 ----------
 const STORAGE_KEY        = "kyoshitsu-asobi-gacha-v1";        // 自分用（編集者）
 const STORAGE_KEY_SHARED = "kyoshitsu-asobi-gacha-shared-v1"; // 共有URLからのプレイヤー用
-const MODEL_COUNT = 50; // 1〜50はモデルあそび枠
+const MODEL_COUNT = 50;   // 1〜50はモデルあそび枠
+const MAX_PLAYS  = 100;   // ＋追加で増やせる上限
 const CAPSULE_COLORS = [
   "#ff7aa2", "#ffae5a", "#ffd66e", "#a8e063",
   "#5dd6c2", "#5dbef7", "#9d8df1", "#d792f0",
@@ -214,40 +215,55 @@ function bindGacha() {
   document.getElementById("lever").addEventListener("click", pullGacha);
 }
 
+const NUM_CAPSULES = 50;
+function randomCapsulePosition() {
+  // ガラスキューブいっぱいに散らばせる（カプセル幅36px≒13%）
+  // x: 2〜85%
+  const x = 2 + Math.random() * 83;
+  // y: ほぼ全体に分布。やや下寄り（下に重力で溜まる雰囲気）
+  const yBase = Math.pow(Math.random(), 0.85);
+  const y = 2 + yBase * 88;
+  const rot = Math.floor(Math.random() * 360);
+  return { x, y, rot };
+}
 function renderDomeCapsules() {
   const dome = document.getElementById("dome-inner");
   dome.innerHTML = "";
-  // ガラスキューブ内にカプセルをランダムに散らばせる
-  const NUM = 38;
-  // 重なり方を自然にしたいので、下のほうに集中 + 一部上にも
-  const positions = [];
-  for (let i = 0; i < NUM; i++) {
-    // x: 4〜78%（カプセル幅36px=約13%, キューブ280px）
-    const x = 4 + Math.random() * 74;
-    // y: 重力風の分布。下半分に集中、一部は上にも
-    const yBase = Math.pow(Math.random(), 0.45); // 0近くが少なく1近くが多い
-    const y = 6 + yBase * 80;
-    // z: -50〜+5px（手前に少し、奥に深く）
-    const z = -52 + Math.random() * 56;
-    const rot = Math.floor(Math.random() * 360);
-    positions.push({ x, y, z, rot });
-  }
-  // z(奥行き)で並び替えて、奥にあるものを先に描画（手前を後にしてオーバーラップを自然に）
-  positions.sort((a, b) => a.z - b.z);
-
-  positions.forEach((p, i) => {
+  for (let i = 0; i < NUM_CAPSULES; i++) {
     const el = document.createElement("div");
     el.className = "mini-capsule";
-    const colorIdx = (i * 7 + 3) % CAPSULE_COLORS.length; // 色をばらつかせる
+    const colorIdx = (i * 7 + 3) % CAPSULE_COLORS.length;
     const { c, d } = colorPair(colorIdx + Math.floor(Math.random() * CAPSULE_COLORS.length));
     el.style.setProperty("--cap-color", c);
     el.style.setProperty("--cap-color-dark", d);
+    const p = randomCapsulePosition();
     el.style.setProperty("--x", p.x.toFixed(1) + "%");
     el.style.setProperty("--y", p.y.toFixed(1) + "%");
-    el.style.setProperty("--z", p.z.toFixed(1) + "px");
     el.style.setProperty("--rot", p.rot + "deg");
     el.style.animationDelay = (Math.random() * 0.18).toFixed(3) + "s";
     dome.appendChild(el);
+  }
+}
+
+// 既存カプセルの位置をすこしランダムに動かす（かき混ぜる演出）
+function shuffleCapsulesABit() {
+  document.querySelectorAll(".mini-capsule").forEach((el) => {
+    const cur = {
+      x: parseFloat(el.style.getPropertyValue("--x")) || 50,
+      y: parseFloat(el.style.getPropertyValue("--y")) || 50,
+      rot: parseFloat(el.style.getPropertyValue("--rot")) || 0,
+    };
+    // 半数は近距離移動、残りは大きめに動かす
+    const heavy = Math.random() < 0.5;
+    const range = heavy ? 28 : 8;
+    let nx = cur.x + (Math.random() - 0.5) * range;
+    let ny = cur.y + (Math.random() - 0.5) * range;
+    nx = Math.max(2, Math.min(85, nx));
+    ny = Math.max(2, Math.min(90, ny));
+    const nrot = cur.rot + (Math.random() - 0.5) * 120;
+    el.style.setProperty("--x", nx.toFixed(1) + "%");
+    el.style.setProperty("--y", ny.toFixed(1) + "%");
+    el.style.setProperty("--rot", nrot.toFixed(0) + "deg");
   });
 }
 
@@ -276,32 +292,24 @@ function pullGacha() {
   const picked = pool[pickedIndex];
 
   // (1) つまみを 120°→240°→360° と3段階で「ガチャ・ガチャ・ガチャ」と回す
+  //    各クリックの瞬間に、キューブ内のカプセルが揺れ + すこしかき混ぜられる
   const lever = document.getElementById("lever");
   lever.style.transform = "rotate(0deg)";
   void lever.offsetWidth;
-  setTimeout(() => { lever.style.transform = "rotate(120deg)"; }, 50);
-  setTimeout(() => { lever.style.transform = "rotate(240deg)"; }, 480);
-  setTimeout(() => { lever.style.transform = "rotate(360deg)"; }, 910);
-
-  // (2) 1回目の手応えに合わせて、キューブ内のカプセルが少し揺れる
-  setTimeout(() => {
-    document.querySelectorAll(".mini-capsule").forEach((el) => {
-      el.classList.remove("shaking");
-      void el.offsetWidth;
-      el.classList.add("shaking");
-    });
-  }, 220);
-  // 2回目・3回目の手応えで再揺らし
-  setTimeout(() => {
-    document.querySelectorAll(".mini-capsule").forEach((el) => {
-      el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking");
-    });
-  }, 650);
-  setTimeout(() => {
-    document.querySelectorAll(".mini-capsule").forEach((el) => {
-      el.classList.remove("shaking"); void el.offsetWidth; el.classList.add("shaking");
-    });
-  }, 1080);
+  const clickAt = (time, deg) => {
+    setTimeout(() => {
+      lever.style.transform = `rotate(${deg}deg)`;
+      shuffleCapsulesABit();
+      document.querySelectorAll(".mini-capsule").forEach((el) => {
+        el.classList.remove("shaking");
+        void el.offsetWidth;
+        el.classList.add("shaking");
+      });
+    }, time);
+  };
+  clickAt(60, 120);
+  clickAt(490, 240);
+  clickAt(920, 360);
 
   // (3) 3回目の回転完了頃にカプセルが排出口から出てくる
   const colorIdx = Math.floor(Math.random() * CAPSULE_COLORS.length);
@@ -420,6 +428,10 @@ function renderCollection() {
 // ---------- 設定画面 ----------
 function bindSettings() {
   document.getElementById("add-play-btn").addEventListener("click", () => {
+    if (state.plays.length >= MAX_PLAYS) {
+      showToast(`追加できるのは${MAX_PLAYS}個までです`);
+      return;
+    }
     state.plays.push({
       id: nextId++, name: "", rule: "", bond: 0, isModel: false,
     });
@@ -435,6 +447,11 @@ function bindSettings() {
 function renderPlays() {
   const list = document.getElementById("plays-list");
   list.innerHTML = "";
+  const counter = document.getElementById("play-counter");
+  if (counter) {
+    counter.textContent = `${state.plays.length} / ${MAX_PLAYS}`;
+    counter.classList.toggle("full", state.plays.length >= MAX_PLAYS);
+  }
   state.plays.forEach((p, idx) => {
     const row = document.createElement("div");
     row.className = "play-row" + (p.isModel ? " is-model" : "") +
@@ -574,7 +591,10 @@ function bindImport() {
       state.plays = [];
       state.collection = [];
     }
+    const before = state.plays.length;
+    let skipped = 0;
     newPlays.forEach((p) => {
+      if (state.plays.length >= MAX_PLAYS) { skipped++; return; }
       state.plays.push({
         id: nextId++,
         name: p.name,
@@ -587,7 +607,12 @@ function bindImport() {
     renderPlays();
     renderCollection();
     modal.classList.add("hidden");
-    showToast(`${newPlays.length}件取り込みました`);
+    const added = state.plays.length - before;
+    if (skipped > 0) {
+      showToast(`${added}件取り込み。${MAX_PLAYS}個の上限により ${skipped}件スキップしました`);
+    } else {
+      showToast(`${added}件取り込みました`);
+    }
   });
 }
 
