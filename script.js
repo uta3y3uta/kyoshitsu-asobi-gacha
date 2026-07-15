@@ -6,7 +6,7 @@
 const STORAGE_KEY        = "kyoshitsu-asobi-gacha-v1";        // 自分用（編集者）
 const STORAGE_KEY_SHARED = "kyoshitsu-asobi-gacha-shared-v1"; // 共有URLからのプレイヤー用
 const MODEL_COUNT = 50;   // 1〜50はモデルあそび枠
-const MAX_PLAYS  = 100;   // ＋追加で増やせる上限
+const MAX_PLAYS  = 150;   // ＋追加で増やせる上限
 const CAPSULE_COLORS = [
   "#ff7aa2", "#ffae5a", "#ffd66e", "#a8e063",
   "#5dd6c2", "#5dbef7", "#9d8df1", "#d792f0",
@@ -76,6 +76,7 @@ function init() {
   bindSettings();
   bindCollection();
   bindImport();
+  bindJsonIO();
   bindShare();
   bindResultModal();
 
@@ -525,7 +526,7 @@ function renderPlays() {
   list.innerHTML = "";
   const counter = document.getElementById("play-counter");
   if (counter) {
-    counter.textContent = `${state.plays.length} / ${MAX_PLAYS}`;
+    counter.textContent = `${state.plays.length}/${MAX_PLAYS}`;
     counter.classList.toggle("full", state.plays.length >= MAX_PLAYS);
   }
   state.plays.forEach((p, idx) => {
@@ -758,6 +759,101 @@ function normalizePlay(cells) {
     else bond = 0;
   }
   return { name, rule, bond };
+}
+
+// ---------- JSON 保存 / 読込 ----------
+function bindJsonIO() {
+  const exportBtn = document.getElementById("export-json-btn");
+  const importBtn = document.getElementById("import-json-btn");
+  const fileInput = document.getElementById("json-file-input");
+  if (!exportBtn || !importBtn || !fileInput) return;
+
+  // 保存（書き出し）
+  exportBtn.addEventListener("click", () => {
+    const data = {
+      app: "kyoshitsu-asobi-gacha",
+      version: 1,
+      allowDuplicate: state.allowDuplicate,
+      plays: state.plays.map((p) => ({
+        name: p.name, rule: p.rule, bond: p.bond, isModel: !!p.isModel,
+      })),
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const d = new Date();
+    const pad = (n) => String(n).padStart(2, "0");
+    a.href = url;
+    a.download = `asobi-gacha_${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast("JSONファイルを保存しました");
+  });
+
+  // 読込
+  importBtn.addEventListener("click", () => {
+    fileInput.value = "";
+    fileInput.click();
+  });
+  fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let obj;
+      try {
+        obj = JSON.parse(reader.result);
+      } catch {
+        showToast("JSONファイルの読み込みに失敗しました");
+        return;
+      }
+      const rawPlays = Array.isArray(obj) ? obj : obj.plays;
+      if (!Array.isArray(rawPlays)) {
+        showToast("あそびデータが見つかりませんでした");
+        return;
+      }
+      const plays = rawPlays
+        .map((p) => ({
+          name: String(p.name ?? p.n ?? "").trim(),
+          rule: String(p.rule ?? p.r ?? ""),
+          bond: Math.max(0, Math.min(3, parseInt(p.bond ?? p.b ?? 0, 10) || 0)),
+          isModel: !!(p.isModel ?? p.m),
+        }))
+        .filter((p) => p.name !== "" || p.rule !== "");
+      if (plays.length === 0) {
+        showToast("取り込めるあそびが見つかりませんでした");
+        return;
+      }
+      confirmDialog(
+        "JSONを読み込みますか？",
+        `現在のデータを置き換えて ${Math.min(plays.length, MAX_PLAYS)}件を読み込みます。`,
+        () => {
+          state.plays = [];
+          state.collection = [];
+          nextId = 1;
+          plays.slice(0, MAX_PLAYS).forEach((p) => {
+            state.plays.push({ id: nextId++, ...p });
+          });
+          if (typeof obj.allowDuplicate === "boolean") {
+            state.allowDuplicate = obj.allowDuplicate;
+            const cb = document.getElementById("allow-duplicate");
+            if (cb) cb.checked = state.allowDuplicate;
+          }
+          state.selectedPreviewId = null;
+          persist();
+          renderPlays();
+          renderCollection();
+          const skipped = plays.length - Math.min(plays.length, MAX_PLAYS);
+          showToast(skipped > 0
+            ? `${MAX_PLAYS}件読み込み（上限により${skipped}件スキップ）`
+            : `${plays.length}件読み込みました`);
+        }
+      );
+    };
+    reader.readAsText(file, "utf-8");
+  });
 }
 
 // ---------- 共有URL ----------

@@ -103,12 +103,15 @@
     <div class="settings-layout">
       <div class="settings-main">
         <div class="settings-toolbar">
-          <h2>⚙️ あそびを設定する</h2>
+          <h2>⚙️</h2>
           <div class="toolbar-actions">
             <button class="ghost-btn" id="add-play-btn">＋ 追加</button>
-            <span class="play-counter" id="play-counter">0 / 100</span>
-            <button class="ghost-btn" id="import-btn">📥 データを取り込み</button>
-            <button class="primary-btn" id="share-btn">🔗 完成→共有URL発行</button>
+            <span class="play-counter" id="play-counter">0/150</span>
+            <button class="ghost-btn" id="import-btn">📥 データを取込</button>
+            <button class="ghost-btn" id="export-json-btn">💾 JSON保存</button>
+            <button class="ghost-btn" id="import-json-btn">📂 JSON読込</button>
+            <input type="file" id="json-file-input" accept=".json,application/json" hidden />
+            <button class="primary-btn" id="share-btn">🔗 共有URL発行</button>
           </div>
         </div>
         <div class="plays-list" id="plays-list"></div>
